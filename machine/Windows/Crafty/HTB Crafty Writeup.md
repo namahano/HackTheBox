@@ -2,9 +2,10 @@
 
 | IP  | 10.10.11.249 |
 | --- | ------------ |
+
 ![](screenshot/Crafty.png)
 
-Crafty は、`Minecraft` サーバーを悪用した、難易度の低い Windows マシン。サーバーのバージョンを列挙すると、`Log4j Injection` を悪用した認証前のリモート コード実行 (RCE) に対して脆弱であることがわかる。ターゲットでリバース シェルを取得した後、ファイル システムを列挙すると、管理者が Java ベースの `Minecraft` プラグインを作成したことがわかり、これをリバース エンジニアリングすると、`rcon` 資格情報が明らかとなる。これらの資格情報は、`RunACs` ユーティリティで活用され、管理者アクセスを取得し、システムを侵害する
+Crafty は、`Minecraft` サーバーを悪用した、難易度の低い Windows マシン。サーバーのバージョンを列挙すると、`Log4j Injection` を悪用した認証前のリモート コード実行 (RCE) に対して脆弱であることがわかる。ターゲットでリバース シェルを取得した後、ファイル システムを列挙すると、管理者が Java ベースの `Minecraft` プラグインを作成したことがわかり、これをリバース エンジニアリングすると、資格情報が明らかとなる。これらの資格情報は、`RunasCs` ユーティリティで活用され、管理者アクセスを取得し、システムを侵害する
 # Enumeration
 ## nmap
 
@@ -56,10 +57,7 @@ OS and Service detection performed. Please report any incorrect results at https
 # Nmap done at Fri Jun 14 07:27:36 2024 -- 1 IP address (1 host up) scanned in 186.88 seconds
 ```
 
-Webサーバーが起動していることがわかったのでアクセスしてみる
-初期アクセスからドメイン`crafty.htb`,`play.crafty.htb`が存在することが分かった。
-/etc/hostsにドメインを追加
-![](screenshot/2024-06-14_07-42.png)
+Webサーバーが起動していることがわかったのでアクセスしてみる<br>初期アクセスからドメイン`crafty.htb`,`play.crafty.htb`が存在することが分かった。<br>/etc/hostsにドメインを追加<br>![](screenshot/2024-06-14_07-42.png)
 
 マインクラフトらしきWebサイトだった
 
@@ -85,19 +83,16 @@ port 25565が開いているのでなんのポートなのか調べてみる
 
 手に入れた情報をもといくつか調べていると以下の記事を発見した
 
-Exploiting Minecraft Server (Log4j)
-[Exploiting Minecraft Servers (Log4j) | by Software Sinner | Medium](https://software-sinner.medium.com/exploiting-minecraft-servers-log4j-ddac7de10847)
+Exploiting Minecraft Server (Log4j)<br>[Exploiting Minecraft Servers (Log4j) | by Software Sinner | Medium](https://software-sinner.medium.com/exploiting-minecraft-servers-log4j-ddac7de10847)
 
 記事によると、log4jというマイクラサーバーを含む Java アプリケーションで広く使用されているログ ライブラリで2021 年 12 月、Log4j で「Log4Shell」または[_CVE-2021–44228_](https://nvd.nist.gov/vuln/detail/CVE-2021-44228)と呼ばれる攻撃者がリモートで任意のコードを実行できるらしい
 
 この脆弱性を悪用すればいけそう
 # Exploit
 
-まず必要になるTLauncherをダウロードする
-[https://tlauncher.org](https://tlauncher.org/en/)/
+まず必要になるTLauncherをダウロードする<br>[https://tlauncher.org](https://tlauncher.org/en/)/
 
-TLauncherでなくても以下のマイクラクライアントでもできる
-[MCCTeam/Minecraft-Console-Client: Lightweight console for Minecraft chat and automated scripts (github.com)](https://github.com/MCCTeam/Minecraft-Console-Client)
+TLauncherでなくても以下のマイクラクライアントでもできる<br>[MCCTeam/Minecraft-Console-Client: Lightweight console for Minecraft chat and automated scripts (github.com)](https://github.com/MCCTeam/Minecraft-Console-Client)
 
 今回はTLauncherを使用する
 
@@ -125,12 +120,11 @@ Multiplayerからサーバーを追加してログインする
 
 これでゲームセッションに接続できたのでCtrl＋Tを押すことでチャットウインドウを開いて悪意のあるペイロードを入力できる準備が整った
 
-つづいてlog4jを悪用するPoCを見つけたのでこれを使用する
-[kozmer/log4j-shell-poc: A Proof-Of-Concept for the CVE-2021-44228 vulnerability. (github.com)](https://github.com/kozmer/log4j-shell-poc)
+つづいてlog4jを悪用するPoCを見つけたのでこれを使用する<br>[kozmer/log4j-shell-poc: A Proof-Of-Concept for the CVE-2021-44228 vulnerability. (github.com)](https://github.com/kozmer/log4j-shell-poc)
 
 リポジトリをクローンしてpoc.pyを見てみる
 
-```
+```python
 #!/usr/bin/env python3
 
 import argparse
@@ -354,8 +348,7 @@ pythonでサーバーをたてダウンロードする
 いつもならevil-winrmでいいのだが今回はポートが開いていないため使うことができない
 代わりに`RunasCs`を使用する
 
-用意したRunasCsをターゲットマシンにアップロードする
-![](screenshot/2024-06-14_23-11.png)
+用意したRunasCsをターゲットマシンにアップロードする<br>![](screenshot/2024-06-14_23-11.png)
 
 metasploitを使用するのでmsfvenomでペイロードを作成しアップロードする
 

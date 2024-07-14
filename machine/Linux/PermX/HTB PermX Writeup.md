@@ -161,8 +161,8 @@ def send_request(url, cmd):
 def main():
     parser = argparse.ArgumentParser(
         prog='permx_exploit.py', 
-        usage='Demonstration of argparser',
-        description='description', 
+        usage='python3 permx_exploit.py -u <target url> -c <cmd>',
+        description='(CVE-2023-4220) Chamilo LMS Unauthenticated Big Upload File Remote Code Execution PoC', 
         epilog='end', 
         add_help=True,
     )

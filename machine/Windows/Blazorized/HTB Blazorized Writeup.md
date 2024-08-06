@@ -457,11 +457,7 @@ RSA_4810はSSA_6010のスクリプトパスを変更できることが分かっ�
 
 ![](screenshot/image-20240806144822286.png)
 
-もう一度実行するとログオン回数が増加していることが分かる。どうやらSSA_6010は定期的にログオンしているらしい。
-
-ユーザーのログオンスクリプトがおかれている `C:\Windows\SYSVOL\sysvol\blazorized.htb\script\A32FF3AEAA23` に
-
-カスタムバッチスクリプトを作成する。
+もう一度実行するとログオン回数が増加していることが分かる。どうやらSSA_6010は定期的にログオンしているらしい。ユーザーのログオンスクリプトがおかれている `C:\Windows\SYSVOL\sysvol\blazorized.htb\script\A32FF3AEAA23` にカスタムバッチスクリプトを作成する。
 
 ![](screenshot/image-20240806150232289.png)
 

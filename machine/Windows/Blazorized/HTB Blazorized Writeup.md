@@ -475,7 +475,7 @@ Set-ADUser -Identity SSA_6010 -ScriptPath "A32FF3AEAA23\login.bat"
 
 ![](screenshot/image-20240806151226069.png)
 
-# Administrator
+# SSA_6010
 
 あたらしいインプラントを作成する
 

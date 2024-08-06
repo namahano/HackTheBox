@@ -128,7 +128,7 @@ clearmlの脆弱性について少し調べてみると脆弱性をまとめて�
 
 [Machine Learning Operations: What You Need to Know Now](https://hiddenlayer.com/research/not-so-clear-how-mlops-solutions-can-muddy-the-waters-of-your-supply-chain/)
 
-![](/screenshot/2024-06-13_09-26.png)
+![](screenshot/2024-06-13_09-26.png)
 
 SDK バージョン 0.17.0 から 1.14.2 で見つかった脆弱性
 この脆弱性は、信頼できないデータの逆シリアル化が原因で、攻撃者がエンドユーザーのシステムで任意のコードを実行でき、悪意のあるアーティファクトがアップロードされ、Artifact クラス内の get メソッドを使用して逆シリアル化された場合に発生するらしい

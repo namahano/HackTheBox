@@ -523,7 +523,7 @@ CopyFile(L"c:\\temp\\payload.exe", L"C:\\ProgramData\\Microsoft\\VisualStudio\\S
 
 ![](screenshot/image-20240809171825360.png)
 
-Visual Studio で編集したペイロードのパスを同じ場所に置く
+Visual Studio で編集したペイロードのパスと同じ場所に置く
 
 ![](screenshot/image-20240809171916431.png)
 

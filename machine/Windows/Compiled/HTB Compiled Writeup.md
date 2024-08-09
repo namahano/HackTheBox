@@ -360,7 +360,7 @@ Giteaがインストールされていたのでフォルダ内を調べると `g
 
 `user` テーブルを調べる
 
-![image-20240809132326499](C:\Users\hatto\AppData\Roaming\Typora\typora-user-images\image-20240809132326499.png)
+![](screenshot/image-20240809132326499.png)
 
 ```
 1|administrator|administrator||administrator@compiled.htb|0|enabled|1bf0a9561cf076c5fc0d76e140788a91b5281609c384791839fd6e9996d3bbf5c91b8eee6bd5081e42085ed0be779c2ef86d|pbkdf2$50000$50|0|0|0||0|||6e1a6f3adbe7eab92978627431fd2984|a45c43d36dce3076158b19c2c696ef7b|en-US||1716401383|1716669640|1716669640|0|-1|1|1|0|0|0|1|0||administrator@compiled.htb|0|0|0|0|0|0|0|0|0||arc-green|0
@@ -526,8 +526,6 @@ CopyFile(L"c:\\temp\\payload.exe", L"C:\\ProgramData\\Microsoft\\VisualStudio\\S
 Visual Studio で編集したペイロードのパスを同じ場所に置く
 
 ![](screenshot/image-20240809171916431.png)
-
-
 
 
 

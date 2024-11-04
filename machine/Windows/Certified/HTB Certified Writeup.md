@@ -22,6 +22,7 @@ OSがWindowsでさらに、名前からしてADCSを悪用するタイプのActi
 ```
 git clone https://github.com/ShutdownRepo/pywhisker.git
 cd pywhisker
+chmod +x pywhisker.py
 sudo ln -s $(pwd)/pywhisker.py /usr/local/bin/pywhisker
 ```
 

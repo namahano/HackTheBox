@@ -522,7 +522,7 @@ kali@Kali [23時55分58秒] [~/HTB/Certified]
 
 実行が完了するとディレクトリに今回の場合は  `lNR660li.pfx` という証明書とそのパスワード (`N5bhtamnAnLKczV3nIsv`)  が作成されます。
 
-### pywhiskerfが失敗するとき
+### pywhiskerが失敗するとき
 
 pywhiskerを実行したとき以下のようにエラーが出る場合がある。
 
@@ -830,6 +830,6 @@ SYSTEM権限でのシェルを取得することができました。
 
 ![](images/Pasted%20image%2020241104182250.png)
 
-![](images/Pasted image 20241104181045.png)
+![](images/Pasted%20image%2020241104181045.png)
 
 user.txt と root.txt を取得し、終了です。

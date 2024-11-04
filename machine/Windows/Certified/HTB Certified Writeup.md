@@ -5,9 +5,29 @@ HTB CertifiedのWriteupです。
 難易度 : medium
 OS : Winodws
 
+![](images/Certified.png)
+
 OSがWindowsでさらに、名前からしてADCSを悪用するタイプのActive Directoryのマシンだと思われます。
 
-![](images/Certified.png)
+このマシンの攻略には以下のツールを使用します。Githubからクローンする必要があります。
+
+- [PKINITtools](https://github.com/dirkjanm/PKINITtools.git)
+- [bloodyAD](https://github.com/CravateRouge/bloodyAD.git)
+- [pywhisker](https://github.com/ShutdownRepo/pywhisker.git)
+
+これらのツールを任意の場所にクローンし、それぞれのシンボリックリンクを作成しています。
+
+例：pywhisker.pyの場合
+
+```
+git clone https://github.com/ShutdownRepo/pywhisker.git
+cd pywhisker
+sudo ln -s $(pwd)/pywhisker.py /usr/local/bin/pywhisker
+```
+
+おすすめです。
+
+# 初期情報
 
 マシンを起動するとバナーが表示され認証情報を渡されました。いままで最初から認証情報を渡されるタイプのマシンはやったことがなかったので少しびっくりしました。
 
@@ -362,7 +382,7 @@ BloodHoundを起動してzipファイルをアップロードします。
 
 `Management` というグループオブジェクトに対して `WriteOwner` の権限を持っています。
 
-![](Pasted%20image%2020241104161043.png)
+![](images/Pasted%20image%2020241104161043.png)
 
 この権限をグループオブジェクトに対して持っているとき、ユーザーはそのグループの所有権を自分自身に変更することができます。
 
@@ -482,7 +502,7 @@ Shadow Credentials とは攻撃者が Active Directoryアカウントに挿入�
 `msDS-KeyCredentialLink` 属性とはパスワードなしの認証のための生の暗号データを保存して、ユーザーまたはコンピュータオブジェクトにリンクする Active Directory 属性です。
 
 
-Shadow Credentialsを悪用するには [pywhisker](https://github.com/ShutdownRepo/pywhisker.git)を使用します。
+Shadow Credentialsを悪用するには [pywhisker](https://github.com/ShutdownRepo/pywhisker.git) を使用します。
 
 ```bash
 kali@Kali [23時55分58秒] [~/HTB/Certified]
@@ -501,6 +521,24 @@ kali@Kali [23時55分58秒] [~/HTB/Certified]
 ```
 
 実行が完了するとディレクトリに今回の場合は  `lNR660li.pfx` という証明書とそのパスワード (`N5bhtamnAnLKczV3nIsv`)  が作成されます。
+
+### pywhiskerfが失敗するとき
+
+pywhiskerを実行したとき以下のようにエラーが出る場合がある。
+
+```
+kali@Kali [20時34分03秒] [~/HTB/Certified] 
+-> % pywhisker -d "certified.htb" -u "judith.mader" -p "judith09" --target "management_svc" --action "add"
+[!] name 'logger' is not defined
+```
+
+このエラーを解決するには [pywhisker](https://github.com/ShutdownRepo/pywhisker.git) からリポジトリをクローンしてブランチを `c4ecf41` に変更するとエラーを解決できます。
+
+```
+git clone https://github.com/ShutdownRepo/pywhisker.git
+cd pywhisker
+git checkout c4ecf41
+```
 
 ### Pass the Certificate
 

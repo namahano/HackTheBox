@@ -348,7 +348,7 @@ sliverを起動します。
 
 作成したインプラントをダウンロード
 
-![image-20241105161719520](C:\Users\hatto\AppData\Roaming\Typora\typora-user-images\image-20241105161719520.png)
+![image-20241105161719520](screenshot/image-20241105161719520.png)
 
 Sliverでリスナーを起動する
 

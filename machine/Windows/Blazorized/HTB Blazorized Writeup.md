@@ -163,7 +163,7 @@ Blazorizedというは、アイデアや知識をオンラインで整理・共�
 次にサブドメインがないか調べてます。
 
 ```
-hatto@VMWare-Kali [14時49分25秒] [~/HTB/Blazorized] 
+kali@Kali [14時49分25秒] [~/HTB/Blazorized] 
 -> % ffuf -w /usr/share/seclists/Discovery/DNS/subdomains-top1million-110000.txt:FUZZ -u http://blurry.htb/ -H 'Host: FUZZ.blurry.htb' -fs 169
 
         /'___\  /'___\           /'___\       

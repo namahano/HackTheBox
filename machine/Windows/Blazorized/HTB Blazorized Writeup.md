@@ -140,7 +140,7 @@ OS and Service detection performed. Please report any incorrect results at https
 Nmap done: 1 IP address (1 host up) scanned in 907.27 seconds
 ```
 
-スキャン結果からこのマシンはActive Direcotryのドメインコントローラーであることが分かりました。
+53, 88, 135, 139, 445がい開いていることからこのマシンはActive Direcotryのドメインコントローラーであることが分かります。
 
 `blazorized.htb` `dc1.blazorized.htb`というドメインを見つけたのでhostsファイルに追加します。
 
@@ -148,21 +148,47 @@ Nmap done: 1 IP address (1 host up) scanned in 907.27 seconds
 10.10.11.22	blazorized.htb dc1.blazorized.htb
 ```
 
-## Web
+## Blazor
 
-80番ポートが開いているのでサイトにアクセスしてみる
-
-BurpSuiteを起動しておきます。
+80番ポートが開いているのでサイトにアクセスしてみるとBlazorizedというウェブサイトが表示されました。
 
 ![](screenshot/024-07-01-190954.png)
 
-Blazorizedというは、アイデアや知識をオンラインで整理・共有するためにBlazor WebAssemblyで構築されたデジタルガーデンでだそうです。
+Blazorizedというのは、「アイデアや知識をオンラインで整理・共有するためのデジタルガーデン」だそうです。
 
-ディレクトリに探索を行ってみましたがとくに興味深そうなのはありませんでした。
+[Blazor WebAssembly](https://learn.microsoft.com/ja-jp/aspnet/core/blazor/?view=aspnetcore-8.0)で作られているようです。
+
+BlazorとはMicrosoftが開発した C# を使ってWebアプリケーションを開発することができるオープンソースのWebフレームワークです。
+
+とりあえずすることといえばディレクトリ探索です。
+
+```bash
+kali@Kali [14時48分25秒] [~/HTB/Blazorized]
+-> % dirsearch -u http://blazorized.htb/
+
+  _|. _ _  _  _  _ _|_    v0.4.3
+ (_||| _) (/_(_|| (_| )
+
+Extensions: php, aspx, jsp, html, js | HTTP method: GET | Threads: 25 | Wordlist size: 11460
+
+Output File: /home/hatto/HTB/Blazorized/reports/http_blazorized.htb/__24-11-08_23-44-07.txt
+
+Target: http://blazorized.htb/
+
+[23:44:07] Starting: 
+[23:44:10] 403 -  312B  - /%2e%2e//google.com
+[23:44:10] 403 -  312B  - /.%2e/%2e%2e/%2e%2e/%2e%2e/etc/passwd
+[23:44:17] 403 -  312B  - /\..\..\..\..\..\..\..\..\..\etc\passwd
+[23:44:32] 403 -  312B  - /cgi-bin/.%2e/%2e%2e/%2e%2e/%2e%2e/etc/passwd
+
+Task Completed
+```
+
+
 
 次にサブドメインがないか調べてます。
 
-```
+```bash
 kali@Kali [14時49分25秒] [~/HTB/Blazorized] 
 -> % ffuf -w /usr/share/seclists/Discovery/DNS/subdomains-top1million-110000.txt:FUZZ -u http://blurry.htb/ -H 'Host: FUZZ.blurry.htb' -fs 169
 
@@ -202,17 +228,33 @@ burp suiteを見てみると http://blazorized.htb でdllが読み込まれて�
 
 ![](screenshot/image-20240715173207353.png)
 
+Blazor WebAssembly について調べていると `blazor.boot.json` という Blazorアプリケーションの起動に関する情報を含むjsonファイルがあることが分かりました。
+
+このファイルには、Blazor アプリケーションがブラウザ上で正しく動作するために必要なリソースや設定情報が含まれているそうです。
+
+[ASP.NET Core Blazor WebAssembly .NET ランタイムとアプリ バンドルのキャッシュ](https://learn.microsoft.com/ja-jp/aspnet/core/blazor/host-and-deploy/webassembly-caching/?view=aspnetcore-8.0)
+
+![image-20241108222707907](screenshot/image-20241108222707907.png)
+
+Burpに検出されているか探していると `/_framework` 配下に見つけました。
+
 ## JWT 認証
 
-http://blazorized.htb/_framework/blazor.boot.json にdllが大量に見つかりました。
+http://blazorized.htb/_framework/blazor.boot.json にアクセスしてみるとdllが大量に見つかりました。
 
 ![](screenshot/image-20240715173459964.png)
 
-blazorizedのdllが4つ見つかった。怪しそうなのでダウンロードしてdotpeekで逆コンパイルしてみます。
+たくさんありますが気になったのは
+
+`Blazored.LocalStorage.dll`, `Blazorized.DigitalGarden.dll`, `Blazorized.Shared.dll`, `Blazorized.Helpers.dll` というdllがマシンの名前が入っているのでなんか怪しそうでした。
+
+この４つのdllを[dotPeek](https://www.jetbrains.com/ja-jp/decompiler/)という最強の.NETデコンパラでデコンパイルしてみました。
+
+すると、`Blazorized.Helpers.dll` に JWTというクラスを見つけました。
 
 ![](screenshot/image-20240715173837066.png)
 
-`Blazorized.Helpers.dll` を逆コンパイルするとJWTというクラスがあることが分かりました。JWT(json web token)を作成するクラスらしく、tokenを作成するための以下の情報を発見しました。
+JWT(json web token)を作成するクラスらしく、tokenを作成するための以下の情報を発見しました。
 
 ![](screenshot/image-20240715174129390.png)
 
@@ -253,8 +295,8 @@ PAYLOAD
   "http://schemas.microsoft.com/ws/2008/06/identity/claims/role": "Super_Admin",
   "iss": "http://api.blazorized.htb",
   "aud": "http://admin.blazorized.htb",
-  "iat": 1730792833,
-  "exp": 1730792833
+  "iat": 1730000000,
+  "exp": 1730000000
 }
 ```
 
@@ -266,10 +308,6 @@ SecurityKey
 
 作成したjwtを開発者モードを開いてローカルストレージにロード
 
-```
-eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9lbWFpbGFkZHJlc3MiOiJzdXBlcmFkbWluQGJsYXpvcml6ZWQuaHRiIiwiaHR0cDovL3NjaGVtYXMubWljcm9zb2Z0LmNvbS93cy8yMDA4LzA2L2lkZW50aXR5L2NsYWltcy9yb2xlIjoiU3VwZXJfQWRtaW4iLCJpc3MiOiJodHRwOi8vYXBpLmJsYXpvcml6ZWQuaHRiIiwiYXVkIjoiaHR0cDovL2FkbWluLmJsYXpvcml6ZWQuaHRiIiwiaWF0IjoxNzMwNzkyODMzLCJleHAiOjE3MzA3OTI4MzN9.aGrjm68sx7r3vjfdw89Kg56hcjzS0aNvBu2CWFG8yTGLXMJ4cdZh5CDR6g__T7NS2Fgw7ot3mFIXLLlmdUTkmA
-```
-
 ![](screenshot/image-20240715181048138.png)
 
 ページをリロードすると管理者ページにアクセスできました
@@ -280,7 +318,7 @@ eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8
 
 ![](screenshot/image-20240715181225112.png)
 
-写真の通りこのページはAPIを使用せずに直接データベースを操作することができるみたいです。SQL Injectionが使えそう
+写真の通りこのページはAPIを使用せずに直接データベースを操作することができるみたいです。SQL Injectionが使えそうです。
 
 nmapのスキャン結果からMSSQLが動いていることが分かっているのでおそらく使用しているデータベースはMSSQLだと思われます。
 
@@ -481,6 +519,10 @@ RSA_4810はSSA_6010のスクリプトパスを変更できるみたいです。
 
 `Get-NetUser` で `SSA_6010` について調べます。
 
+```
+Get-NetUser -Identity SSA_6010
+```
+
 ![](screenshot/image-20240806144637716.png)
 
 `3073`回もログオンしています。怪しすぎます。
@@ -499,7 +541,11 @@ RSA_4810はSSA_6010のスクリプトパスを変更できるみたいです。
 
 `A32FF3AEAA23` のフルアクセス権を持っていました。ここにリバースシェルスクリプトを追加します。
 
-![image-20241105173022300](screenshot/image-20241105173022300.png)
+![image-20241108225710839](screenshot/image-20241108225710839.png)
+
+`A32FF3AEAA23` にアップロードします。
+
+![image-20241108225825095](screenshot/image-20241108225825095.png)
 
 作成したスクリプトをSSA_6010のスクリプトパスに追加する
 

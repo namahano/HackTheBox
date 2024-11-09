@@ -10,7 +10,7 @@ OS : Windows
 
 # Enumeration
 
-## nmap
+## Nmap
 
 ```bash
 kali@Kali [14時24分22秒] [~/HTB/Blazorized] 
@@ -171,7 +171,7 @@ kali@Kali [14時48分25秒] [~/HTB/Blazorized]
 
 Extensions: php, aspx, jsp, html, js | HTTP method: GET | Threads: 25 | Wordlist size: 11460
 
-Output File: /home/hatto/HTB/Blazorized/reports/http_blazorized.htb/__24-11-08_23-44-07.txt
+Output File: /home/kali/HTB/Blazorized/reports/http_blazorized.htb/__24-11-08_23-44-07.txt
 
 Target: http://blazorized.htb/
 

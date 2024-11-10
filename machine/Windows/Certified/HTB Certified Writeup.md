@@ -754,7 +754,7 @@ No Security Extension (ESC9) 攻撃は、`CT_FLAG_NO_SECURITY_EXTENSION` フラ�
 
 この攻撃には [Certipy](https://github.com/ly4k/Certipy.git) を使用します。
 
-まず `ca_operator` のNTLMハッシュが必要になります。これは `Shadow Credentials` によって取得するか、新しく作成したパスワードを [NTLM Hash Generator](https://codebeautify.org/ntlm-hash-generator)でNTLMに変換することができます。
+まず `ca_operator` のNTLMハッシュまたはパスワードが必要になります。これは `Shadow Credentials` によって取得するか、新しく作成したパスワードを [NTLM Hash Generator](https://codebeautify.org/ntlm-hash-generator)でNTLMに変換することができます。今回はパスワードが分かっているのでこの操作は必要ありません。
 
 ```bash
 kali@Kali [00時33分10秒] [~/HTB/Certified] 
@@ -779,7 +779,6 @@ Certipy v4.8.2 - by Oliver Lyak (ly4k)
 [*] NT hash for 'ca_operator': 58a478135a93ac3bf058a5ea0e8fdb71
 ```
 
-`ca_operator` のNTLMハッシュを取得しました。
 次に `ca_operator` の `userPrincipalName` を `administrator` に変更します。
 
 ```bash

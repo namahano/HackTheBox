@@ -562,7 +562,7 @@ kerberos認証をevil-winrmで使うには `/etc/krb5.conf` を以下のよう�
         VINTAGE.HTB = {
                 kdc = DC01.VINTAGE.HTB
                 admin_server = DC01.VINTAGE.HTB
-				default_domain = vintage.htb
+                default_domain = vintage.htb
         }
 [domain_realm]
         vintage.htb = VINTAGE.HTB

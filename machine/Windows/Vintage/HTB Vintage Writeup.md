@@ -552,12 +552,12 @@ kerberos認証をevil-winrmで使うには `/etc/krb5.conf` を以下のよう�
 ```bash
 -> % cat /etc/krb5.conf                                                    
 [libdefault]
-    default_realm = VINTAGE.HTB
+	default_realm = VINTAGE.HTB
 	dns_lookup_realm = false
-	dns_lookup_kdc = false
-	ticket_lifetime = 24h
-	forwardable = yes
-	rdns = false
+    dns_lookup_kdc = false
+    ticket_lifetime = 24h
+    forwardable = yes
+    rdns = false
 [realms]
     VINTAGE.HTB = {
     kdc = DC01.VINTAGE.HTB
